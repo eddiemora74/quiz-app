@@ -1,0 +1,82 @@
+﻿@page "/"
+@using quiz_app.web.Entities
+@using quiz_app.web.Utilities
+@inject ILocalStorageService LocalStorageService
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>Home</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H2">Quiz List</RadzenText>
+
+<RadzenDataGrid Data="quizzes">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(Quiz.Name)" Title="Name" Width="300px"></RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Quiz.Description)" Title="Description"></RadzenDataGridColumn>
+        <RadzenDataGridColumn Title="" Width="150px">
+            <Template Context="data">
+                <RadzenSplitButton Text="Take quiz" Click="@(args => OnClick(args, data.Id))">
+                    <ChildContent>
+                        <RadzenSplitButtonItem Text="Edit" Value="Edit" />
+                        <RadzenSplitButtonItem Text="Delete" Value="Delete" />
+                    </ChildContent>
+                </RadzenSplitButton>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+
+    IQueryable<Quiz> quizzes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        GetQuizzes();
+    }
+
+    private void GetQuizzes()
+    {
+        quizzes = LocalStorageService.GetQuizzes();
+    }
+
+    private void OnClick(RadzenSplitButtonItem? item, Guid id)
+    {
+        if (item != null)
+        {
+            if (item.Value == "Edit")
+            {
+                NavigationManager.NavigateTo($"/quizzes/{id}/edit");
+            }
+            else
+            {
+                var items = LocalStorageService.GetItem<List<Quiz>>("quizzes") ?? [];
+                var newList = items.Where(q => !q.Id.Equals(id)).ToList();
+                LocalStorageService.SetItem("quizzes", newList);
+                var notification = new NotificationMessage
+                {
+                    Duration = null,
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Success!",
+                    Detail = "Your quiz has been deleted!",
+                    Style = null,
+                    Click = null,
+                    Close = null,
+                    CloseOnClick = false,
+                    Payload = null,
+                    DetailContent = null,
+                    SummaryContent = null
+                };
+                NotificationService.Notify(notification);
+                GetQuizzes();
+            }    
+        }
+        else
+        {
+            NavigationManager.NavigateTo($"/quizzes/{id}/take");
+        }
+    }
+
+}

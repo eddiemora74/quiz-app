@@ -1,0 +1,64 @@
+@page "/quizzes/{Id:guid}/take"
+@using quiz_app.web.Entities
+@using quiz_app.web.Utilities
+@inject ILocalStorageService LocalStorageService
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+
+<RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center">
+    <RadzenRow >
+        <RadzenText TextStyle="TextStyle.H3">@_quiz.Name</RadzenText>
+    </RadzenRow>
+    <RadzenRow>
+        <RadzenText TextStyle="TextStyle.Subtitle1">@_quiz.Description</RadzenText>
+    </RadzenRow>
+    <RadzenRow>
+        <RadzenText TextStyle="TextStyle.Caption">NOTE: you will only have one chance to answer each question.</RadzenText>
+    </RadzenRow>
+    @if (!_begin)
+    {
+        <RadzenRow>
+            <RadzenButton ButtonStyle="ButtonStyle.Primary" Click="() => _begin = true">BEGIN</RadzenButton>
+        </RadzenRow>    
+    }
+    else
+    {
+        <RadzenRow class="rz-w-100">
+            <RadzenCard Variant="Variant.Outlined" class="rz-w-100">
+                <RadzenCarousel @ref=_carousel @bind-SelectedIndex="@_selectedIndex" Auto="false" 
+                                PagerOverlay="false" ButtonShade="Shade.Default" Style="height:300px">
+                    <Items>
+                        @foreach (var question in _quiz.Questions)
+                        {
+                            <RadzenCarouselItem>
+                                <RadzenCard class="rz-w-75">
+                                    <RadzenStack Orientation="Orientation.Horizontal">
+                                        @question.Text
+                                    </RadzenStack>
+                                </RadzenCard>
+                            </RadzenCarouselItem>
+                        }
+                    </Items>
+                </RadzenCarousel>
+            </RadzenCard>
+        </RadzenRow>
+    }
+</RadzenStack>
+
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Quiz _quiz;
+    private bool _begin = false;
+    private RadzenCarousel _carousel;
+    private int _selectedIndex;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        _quiz = LocalStorageService.GetQuiz(Id);
+    }
+    
+    
+    
+}

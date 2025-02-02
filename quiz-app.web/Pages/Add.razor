@@ -1,0 +1,166 @@
+@page "/Add"
+@using quiz_app.web.Entities
+@inject ILocalStorageService LocalStorageService
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+
+<RadzenFieldset Text="Quiz Info">
+    <RadzenStack Gap="1rem">
+        <RadzenRow AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Start">
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenRow AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12" SizeMD="2">
+                        <RadzenLabel Text="Title" Component="Title"/>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="10">
+                        <RadzenTextBox 
+                            Style="width: 100%;" 
+                            Name="Title" 
+                            @bind-Value="_newQuiz.Name"
+                            Placeholder="e.g. Math Quiz" />
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenRow AlignItems="AlignItems.Start">
+                    <RadzenColumn Size="12" SizeMD="2">
+                        <RadzenLabel Text="Description" Component="Description"/>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="10">
+                        <RadzenTextArea 
+                            Style="width: 100%" 
+                            Rows="5" 
+                            Name="Description" 
+                            @bind-Value="@_newQuiz.Description"
+                            Placeholder="e.g. A quiz about some math questions." />
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenStack>
+    <RadzenButton 
+        ButtonType="ButtonType.Submit" 
+        Size="ButtonSize.Large" 
+        Icon="save" 
+        Text="Save"
+        Click="() => Submit()"
+        Disabled="@ValidateForm()" />
+</RadzenFieldset>
+<RadzenFieldset Text="Questions">
+    <RadzenStack>
+        <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+            <RadzenButton ButtonStyle="ButtonStyle.Primary" Click="@((args) => AddQuestion())" Disabled="@_newQuiz.Questions.Count.Equals(5)">Add</RadzenButton>
+            <RadzenText>Questions: @_newQuiz.Questions.Count/5</RadzenText>
+        </RadzenRow>
+            @foreach (var question in _newQuiz.Questions.Select((q, idx) => new { q, idx }))
+            {
+                <RadzenRow>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenRow AlignItems="AlignItems.Start">
+                            <RadzenColumn Size="12" SizeMD="2">
+                                <RadzenLabel Text="Question" Component="Question"/>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="10">
+                                <RadzenTextArea 
+                                    Style="width: 100%" 
+                                    Rows="6" 
+                                    Name="Question" 
+                                    @bind-Value="@question.q.Text"
+                                    Placeholder="e.g. What is the square root of 42?" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        @foreach (var answer in question.q.Answers)
+                        {
+                            <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start">
+                                <RadzenColumn Size="2">
+                                    <RadzenRow AlignItems="AlignItems.Center">
+                                        <RadzenCheckBox @bind-Value=@answer.IsCorrect
+                                                        TValue="bool"
+                                                        Change="@(() => CheckboxChange(question.q.Id, answer.Id))"/>
+                                        <RadzenText>@answer.AnswerKey</RadzenText>    
+                                    </RadzenRow>
+                                </RadzenColumn>
+                                <RadzenColumn Size="8">
+                                    <RadzenTextBox 
+                                        class="rz-w-100" 
+                                        @bind-Value="@answer.Text"
+                                        Placeholder="e.g. Some answer"></RadzenTextBox>
+                                </RadzenColumn>
+                            </RadzenRow>
+                        }
+                    </RadzenColumn>
+                </RadzenRow>
+            }
+    </RadzenStack>
+</RadzenFieldset>
+
+@code {
+    private Quiz _newQuiz = new()
+    {
+        Id = Guid.NewGuid(),
+        DateCreated = DateTime.UtcNow,
+        DateModified = DateTime.UtcNow,
+        Questions = []
+    };
+    
+    private void Submit()
+    {
+        var item = LocalStorageService.GetItem<List<Quiz>>("quizzes") ?? [];
+        item.Add(_newQuiz);
+        LocalStorageService.SetItem("quizzes", item);
+        NotificationService.Notify(new NotificationMessage
+        {
+            Duration = null,
+            Severity = NotificationSeverity.Success,
+            Summary = "Success!",
+            Detail = "Your quiz has been created!",
+            Style = null,
+            Click = null,
+            Close = null,
+            CloseOnClick = false,
+            Payload = null,
+            DetailContent = null,
+            SummaryContent = null
+        });
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void AddQuestion()
+    {
+        if (_newQuiz.Questions.Count >= 5) return;
+        _newQuiz.Questions.Add(new Question
+        {
+            Id = Guid.NewGuid(),
+            Answers =
+            [
+                new Answer() { AnswerKey = "A", Id = Guid.NewGuid(), IsCorrect = true },
+                new Answer() { AnswerKey = "B", Id = Guid.NewGuid(), IsCorrect = false },
+                new Answer() { AnswerKey = "C", Id = Guid.NewGuid(), IsCorrect = false },
+                new Answer() { AnswerKey = "D", Id = Guid.NewGuid(), IsCorrect = false }
+            ]
+        });
+    }
+
+    private void CheckboxChange(Guid questionId, Guid answerId)
+    {
+        _newQuiz.Questions
+            .FirstOrDefault(q => q.Id == questionId)?
+            .Answers.ForEach(a => a.IsCorrect = a.Id.Equals(answerId));
+            
+    }
+
+    private bool ValidateForm()
+    {
+        if (_newQuiz.Questions.Count == 0) return true;
+        if (string.IsNullOrWhiteSpace(_newQuiz.Name)) return true;
+        if (_newQuiz.Questions.Any(q =>
+            {
+                if (string.IsNullOrWhiteSpace(q.Text)) return true;
+                if (q.Answers.Any(a => string.IsNullOrWhiteSpace(a.Text))) return true;
+                return false;
+            })) return true;
+        return false;
+    }
+}

@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "quiz-app.web", "quiz-app.web\quiz-app.web.csproj", "{276B1301-0B2A-46AA-94F7-DBB62E83CA63}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{276B1301-0B2A-46AA-94F7-DBB62E83CA63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{276B1301-0B2A-46AA-94F7-DBB62E83CA63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{276B1301-0B2A-46AA-94F7-DBB62E83CA63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{276B1301-0B2A-46AA-94F7-DBB62E83CA63}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
